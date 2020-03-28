@@ -1,11 +1,11 @@
-package axtstar.example.zio
+package com.axtstar.example.zio
 
 import java.io.IOException
 
 import zio._
 import zio.console._
 
-object MyApp extends App {
+object Main extends App {
 
   def run(args: List[String]): URIO[Console, Int] =
     //failure as 1, success as 0
