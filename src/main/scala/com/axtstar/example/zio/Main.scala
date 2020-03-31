@@ -12,12 +12,14 @@ object Main extends App {
     args match {
       case x::_ =>
         x match {
-          case "0" =>
+          case "howOldAreYou" =>
             //sbt "run 0"
             howOldAreYou.fold(_ => 1, _ => 0)
-          case "1" =>
+          case "basicOperation" =>
             //I'm not sure how to handle can
             basicOperation.fold(_ => 1, _ => 0)
+          case "basicFailure" =>
+            basicFailure.fold(_ => 1, _ => 0)
 
         }
       case _ =>
@@ -45,13 +47,67 @@ object Main extends App {
   val basicOperation: ZIO[Console, IOException, Unit] = {
     //this is effect, eager evaluation
     val s1 = ZIO.succeed(42).map(_ * 2)
+    // type alisa of the above
+    val s2 = Task.succeed(42).map(_ * 2)
     for {
       target <- s1
       _ <- putStrLn(s"result is $target")
-
+      target <- s2
+      _ <- putStrLn(s"result is $target")
     } yield ()
+  }
 
+  val basicFailure: ZIO[Console, Serializable, Unit] = {
+    val f1 = ZIO.fail("OOps")
+    val f2 = Task.fail(new Exception("OOps"))
+    for {
+      target <- f1
+      _ <- putStr(s"f1:${target}")
+      target <- f2
+      _ <- putStr(s"f2:${target}")
+    } yield ()
+  }
 
+  val fromOption = {
+    val zoption: ZIO[Any, Unit, Int] = ZIO.fromOption(Some(2))
+    val zoption2: ZIO[Any, String, Int] = zoption.mapError(_ => "It wasn't there!")
+  }
+
+  val fromEither = {
+    val zeither:IO[Nothing, String] = ZIO.fromEither(Right("Success!"))
+    val zeither2:IO[String, Nothing] = ZIO.fromEither(Left("Success!"))
+  }
+
+  val fromTry = {
+    import scala.util.Try
+    val ztry:Task[Int] = ZIO.fromTry(Try(2 / 0))
+  }
+
+  val fromFunction = {
+    val zfun: ZIO[Long, Nothing, Int] = ZIO.fromFunction((i: Long) => (i * i).toInt)
+  }
+
+  val fromFuture = {
+    import scala.concurrent.Future
+
+    lazy val future = Future.successful("Hello!")
+
+    val zfuture: Task[String] =
+      ZIO.fromFuture { implicit ec =>
+        future.map(_ => "Goodbye!")
+      }
+  }
+
+  val syncSideEffect = {
+    import scala.io.StdIn
+
+    val getStrLn: Task[String] =
+      ZIO.effect(StdIn.readLine())
+  }
+
+  val syncSideEffect2 = {
+    def putStrLn(line: String): UIO[Unit] =
+      ZIO.effectTotal(println(line))
   }
 
 }
