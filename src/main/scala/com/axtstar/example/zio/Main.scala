@@ -20,6 +20,45 @@ object Main extends App {
             basicOperation.fold(_ => 1, _ => 0)
           case "basicFailure" =>
             basicFailure.fold(_ => 1, _ => 0)
+          case "mapping" => {
+            val result = for {
+              right <- mapping
+              _ <- putStrLn(s"mapping: ${right}")
+            } yield()
+
+           result.map(_ => 0)
+          }
+          case "zipped" => {
+            val zipped: UIO[(String, Int)] =
+              ZIO.succeed("4").zip(ZIO.succeed(2))
+
+            val result = for {
+              target <- zipped
+              _ <- putStrLn(s"${target._1}  & ${target._2}" )
+            } yield ()
+
+            result.map(x =>   0)
+          }
+          case "either" => {
+            val zeither: UIO[Either[String, Int]] =
+              IO.fail("Uh oh!").either
+
+            val result = for {
+              target <- zeither
+              _ <- putStrLn(s"isLeft : ${target.isLeft} : ${target.left.getOrElse("")}")
+            } yield()
+
+            result.map(x =>   0)
+          }
+
+          case "sqrt" => {
+            val result = for {
+              target <- sqrt(UIO.succeed(50))
+              _ <- putStrLn(s"sqrt: ${target}")
+            } yield ()
+
+            result.fold(_ =>   1, _=> 0)
+          }
 
         }
       case _ =>
@@ -68,6 +107,10 @@ object Main extends App {
     } yield ()
   }
 
+  val mapping: UIO[Int] = {
+    IO.succeed(21).map(_ * 2)
+  }
+
   val fromOption = {
     val zoption: ZIO[Any, Unit, Int] = ZIO.fromOption(Some(2))
     val zoption2: ZIO[Any, String, Int] = zoption.mapError(_ => "It wasn't there!")
@@ -109,5 +152,14 @@ object Main extends App {
     def putStrLn(line: String): UIO[Unit] =
       ZIO.effectTotal(println(line))
   }
+
+  def sqrt(io: UIO[Double]): IO[String, Double] =
+    ZIO.absolve(
+      io.map(value =>
+        if (value < 0.0) Left("Value must be >= 0.0")
+        else Right(Math.sqrt(value))
+      )
+    )
+
 
 }
